@@ -4,13 +4,13 @@ import json
 import os
 
 class Block:
-    def __init__(self, index, data, prev_hash):
+    def __init__(self, index, data, prev_hash, nonce=None, hash=None):
         self.index = index
         self.timestamp = datetime.datetime.now().isoformat()
         self.data = data
         self.prev_hash = prev_hash
-        self.nonce = 0
-        self.hash = self.calculate_hash()
+        self.nonce = nonce if nonce is not None else 0
+        self.hash = hash if hash else self.calculate_hash()
 
     def calculate_hash(self):
         return hashlib.sha256((str(self.index) + str(self.timestamp) + str(self.data) + str(self.prev_hash) + str(self.nonce)).encode()).hexdigest()
@@ -27,8 +27,8 @@ class Block:
             "timestamp": self.timestamp,
             "data": self.data,
             "prev_hash": self.prev_hash,
-            "nonce": self.nonce,
-            "hash": self.hash
+            "hash": self.hash,
+            "nonce": self.nonce
         }
 
 class Blockchain:
@@ -45,7 +45,7 @@ class Blockchain:
         if os.path.exists("blockchain.json"):
             with open("blockchain.json", "r") as file:
                 data = json.load(file)
-                return [Block(b["index"], b["data"], b["prev_hash"]) for b in data]
+                return [Block(b["index"], b["data"], b["prev_hash"], b["nonce"], b["hash"]) for b in data]
         else:
             return None
 
@@ -74,7 +74,7 @@ class Blockchain:
 
 # Add blocks
 def add_block(data_input):
-    blockchain.add_block(Block(len(blockchain.chain), data_input, blockchain.get_latest_block().hash))
+    blockchain.add_block(Block(len(blockchain.chain), data_input, blockchain.get_latest_block().hash, blockchain.get_latest_block().nonce))
 
 # Streamlit UI
 import streamlit as st
@@ -94,6 +94,6 @@ for block in blockchain.chain:
     st.write("Timestamp:", block.timestamp)
     st.write("Data:", block.data)
     st.write("Previous Hash:", block.prev_hash)
-    st.write("Nonce:", block.nonce)
     st.write("Hash:", block.hash)
+    st.write("Nonce:", block.nonce)
     st.write("")
