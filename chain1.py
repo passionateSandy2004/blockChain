@@ -58,7 +58,7 @@ class Blockchain:
         return True
 
 # Streamlit UI
-st.title("Simple Blockchain")
+st.title("Blockchain santhosherium")
 
 if "blockchain" not in state:
     state.blockchain = Blockchain()
