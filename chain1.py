@@ -1,12 +1,12 @@
 import hashlib
 import datetime
-import streamlit as st
-from streamlit import session_state as state
+import json
+import os
 
 class Block:
     def __init__(self, index, data, prev_hash):
         self.index = index
-        self.timestamp = datetime.datetime.now()
+        self.timestamp = datetime.datetime.now().isoformat()
         self.data = data
         self.prev_hash = prev_hash
         self.nonce = 0
@@ -21,6 +21,15 @@ class Block:
             self.hash = self.calculate_hash()
         print("Block mined: ", self.hash)
 
+    def to_dict(self):
+        return {
+            "index": self.index,
+            "timestamp": self.timestamp,
+            "data": self.data,
+            "prev_hash": self.prev_hash,
+            "nonce": self.nonce,
+            "hash": self.hash
+        }
 
 class Blockchain:
     def __init__(self):
@@ -33,10 +42,16 @@ class Blockchain:
         return Block(0, "Genesis Block", "0")
 
     def load_chain(self):
-        return state.chain if "chain" in state else None
+        if os.path.exists("blockchain.json"):
+            with open("blockchain.json", "r") as file:
+                data = json.load(file)
+                return [Block(b["index"], b["data"], b["prev_hash"]) for b in data]
+        else:
+            return None
 
     def save_chain(self):
-        state.chain = self.chain
+        with open("blockchain.json", "w") as file:
+            json.dump([block.to_dict() for block in self.chain], file, indent=4)
 
     def get_latest_block(self):
         return self.chain[-1]
@@ -57,23 +72,24 @@ class Blockchain:
                 return False
         return True
 
-# Streamlit UI
-st.title("Blockchain santhosherium")
-
-if "blockchain" not in state:
-    state.blockchain = Blockchain()
-
 # Add blocks
+def add_block(data_input):
+    blockchain.add_block(Block(len(blockchain.chain), data_input, blockchain.get_latest_block().hash))
+
+# Streamlit UI
+import streamlit as st
+
+st.title("Blockchain Santhosherium")
+
+blockchain = Blockchain()
+
 data_input = st.text_input("Enter Data for the New Block:")
 if st.button("Add Block") and data_input:
-    index = len(state.blockchain.chain)
-    state.blockchain.add_block(Block(index, data_input, state.blockchain.get_latest_block().hash))
+    add_block(data_input)
     st.success("Block added successfully!")
 
-# Display blockchain
 st.header("Blockchain")
-for block in state.blockchain.chain:
-    st.write("---")
+for block in blockchain.chain:
     st.subheader(f"Block {block.index}")
     st.write("Timestamp:", block.timestamp)
     st.write("Data:", block.data)
